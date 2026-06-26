@@ -13,6 +13,7 @@ import json
 import sys
 import time
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 import pandas as pd
@@ -37,6 +38,8 @@ APPROVED_TABLES = {
     "ami_meters": {},
     "ami_meter_readings": {"control_total_column": "usage_quantity"},
 }
+
+CONTROL_TOTAL_QUANTIZER = Decimal("0.001")
 
 
 def parse_args():
@@ -137,6 +140,12 @@ def read_raw_partition(raw_base_dir, table_name, load_date):
     return raw_df, parquet_files
 
 
+def normalize_control_total(value):
+    if value is None:
+        return None
+    return Decimal(str(value)).quantize(CONTROL_TOTAL_QUANTIZER, rounding=ROUND_HALF_UP)
+
+
 def validate_table(engine, raw_base_dir, table_name, load_date):
     started = time.perf_counter()
     control_total_column = APPROVED_TABLES[table_name].get("control_total_column")
@@ -189,7 +198,7 @@ def validate_table(engine, raw_base_dir, table_name, load_date):
         raw_control_total = None
         if control_total_column:
             raw_control_total = raw_df[control_total_column].sum()
-            if float(source_control_total) != float(raw_control_total):
+            if normalize_control_total(source_control_total) != normalize_control_total(raw_control_total):
                 raise RuntimeError(
                     "Control-total mismatch: "
                     f"source={source_control_total}, raw={raw_control_total}"

@@ -15,6 +15,7 @@ import sys
 import time
 import uuid
 from datetime import date, datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 import pandas as pd
@@ -62,6 +63,8 @@ APPROVED_TABLES = {
         "control_total_column": "usage_quantity",
     },
 }
+
+CONTROL_TOTAL_QUANTIZER = Decimal("0.001")
 
 
 def parse_args():
@@ -214,6 +217,12 @@ def validate_written_file(output_path, expected_count, control_total_column=None
     return parquet_count, raw_control_total, count_matches
 
 
+def normalize_control_total(value):
+    if value is None:
+        return None
+    return Decimal(str(value)).quantize(CONTROL_TOTAL_QUANTIZER, rounding=ROUND_HALF_UP)
+
+
 def build_summary_paths(log_dir, run_id):
     log_path = Path(log_dir)
     log_path.mkdir(parents=True, exist_ok=True)
@@ -280,7 +289,10 @@ def ingest_table(engine, raw_base_dir, table_name, load_date, run_id):
 
         control_total_matches = True
         if control_total_column:
-            control_total_matches = float(source_control_total) == float(raw_control_total)
+            control_total_matches = (
+                normalize_control_total(source_control_total)
+                == normalize_control_total(raw_control_total)
+            )
 
         if not count_matches:
             raise RuntimeError(

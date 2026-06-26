@@ -85,7 +85,7 @@ Expected result:
 
 ```text
 status: FAILED
-table_name: __connection__
+error: connection refused
 ```
 
 Restart PostgreSQL:
