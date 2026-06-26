@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: utility-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-utility_user}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      POSTGRES_DB: ${POSTGRES_DB:-utility_governance_lab}
+    ports:
+      - "5432:5432"
+    volumes:
+      - utility_postgres_data:/var/lib/postgresql/data
+      - ./postgres/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+
+volumes:
+  utility_postgres_data:

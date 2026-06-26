@@ -1,0 +1,9 @@
+# Phase 1 active dependencies
+duckdb
+faker
+pandas
+pyarrow
+pyspark==3.5.7
+psycopg2-binary
+python-dotenv
+sqlalchemy
